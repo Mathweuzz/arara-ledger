@@ -1,24 +1,16 @@
 >>SOURCE FORMAT FREE
 *> ------------------------------------------------------------
-*> Programa: menu.cob
+*> Programa: menu.cob (versao simples, sem SCREEN SECTION)
 *> Objetivo:
-*>   - TUI (SCREEN SECTION) para menu principal.
-*>   - Entrada de dados das contas feita por prompts linha a linha
-*>     (mais amigavel em terminais tipo WSL/Windows Terminal).
+*>   - Menu de texto puro para operar o cadastro de contas.
+*>   - Entrada linha a linha, com mensagens explicitas.
 *>   - Chama o subprograma ACCOUNTS-IO para CRUD.
 *> ------------------------------------------------------------
 IDENTIFICATION DIVISION.
 PROGRAM-ID. MENU.
 
-ENVIRONMENT DIVISION.
-CONFIGURATION SECTION.
-SPECIAL-NAMES.
-    CRT STATUS IS WS-CRT-STATUS.
-
 DATA DIVISION.
 WORKING-STORAGE SECTION.
-
-01 WS-CRT-STATUS        PIC 9(4).
 
 01 WS-MENU-OPTION       PIC X.
 01 WS-PAUSE             PIC X(80).
@@ -33,19 +25,6 @@ WORKING-STORAGE SECTION.
 01 WS-AC-STATUS         PIC X(1).
 01 WS-AC-RETURN-STATUS  PIC XX.
 
-SCREEN SECTION.
-
-01 MAIN-MENU-SCREEN.
-   05 BLANK SCREEN.
-   05 LINE 2  COLUMN 10 VALUE "AraraLedger - Menu de Contas".
-   05 LINE 4  COLUMN 10 VALUE "1 - Cadastrar nova conta".
-   05 LINE 5  COLUMN 10 VALUE "2 - Consultar conta por ID".
-   05 LINE 6  COLUMN 10 VALUE "3 - Atualizar conta".
-   05 LINE 7  COLUMN 10 VALUE "4 - Listar todas as contas".
-   05 LINE 9  COLUMN 10 VALUE "0 - Sair".
-   05 LINE 11 COLUMN 10 VALUE "Opcao: ".
-   05 LINE 11 COLUMN 18 PIC X USING WS-MENU-OPTION.
-
 PROCEDURE DIVISION.
 MAIN-PARA.
     PERFORM MAIN-LOOP
@@ -53,7 +32,7 @@ MAIN-PARA.
     .
 
 MAIN-LOOP.
-    MOVE " " TO WS-MENU-OPTION
+    MOVE SPACE TO WS-MENU-OPTION
 
     PERFORM UNTIL WS-MENU-OPTION = "0"
        PERFORM SHOW-MENU
@@ -67,7 +46,7 @@ MAIN-LOOP.
           WHEN "4"
              PERFORM OPTION-LIST
           WHEN "0"
-             CONTINUE
+             DISPLAY "Saindo do AraraLedger - Menu de Contas."
           WHEN OTHER
              DISPLAY "Opcao invalida. Pressione ENTER para continuar."
              ACCEPT WS-PAUSE
@@ -76,13 +55,22 @@ MAIN-LOOP.
     .
 
 SHOW-MENU.
-    MOVE SPACE TO WS-MENU-OPTION
-    DISPLAY MAIN-MENU-SCREEN
-    ACCEPT MAIN-MENU-SCREEN
+    DISPLAY " "
+    DISPLAY "======================================="
+    DISPLAY " AraraLedger - Menu de Contas"
+    DISPLAY "======================================="
+    DISPLAY " 1 - Cadastrar nova conta"
+    DISPLAY " 2 - Consultar conta por ID"
+    DISPLAY " 3 - Atualizar conta"
+    DISPLAY " 4 - Listar todas as contas"
+    DISPLAY " 0 - Sair"
+    DISPLAY "---------------------------------------"
+    DISPLAY "Opcao: " WITH NO ADVANCING
+    ACCEPT WS-MENU-OPTION
     .
 
 *> ------------------------------------------------------------
-*> Inclusao de nova conta (entrada linha a linha)
+*> Inclusao de nova conta
 *> ------------------------------------------------------------
 OPTION-CREATE.
     MOVE 0      TO WS-AC-ACCOUNT-ID WS-AC-PARENT-ID WS-AC-OPENED-DATE
@@ -115,6 +103,7 @@ OPTION-CREATE.
 
     MOVE "C" TO WS-AC-OP-CODE
 
+    DISPLAY "DEBUG: chamando ACCOUNTS-IO (C)..."
     CALL "ACCOUNTS-IO" USING
          WS-AC-OP-CODE
          WS-AC-ACCOUNT-ID
@@ -126,8 +115,9 @@ OPTION-CREATE.
          WS-AC-STATUS
          WS-AC-RETURN-STATUS
 
+    DISPLAY "DEBUG: retorno ACCOUNTS-IO = " WS-AC-RETURN-STATUS
     DISPLAY "Resultado inclusao - STATUS: " WS-AC-RETURN-STATUS
-    DISPLAY "(00 = OK, 22 = chave duplicada, 35 = nao encontrado/erro)."
+    DISPLAY "(00 = OK, 22 = chave duplicada, 35 = nao encontrado/erro, outros = problema de I/O)."
     DISPLAY "Pressione ENTER para voltar ao menu."
     ACCEPT WS-PAUSE
     .
@@ -146,6 +136,7 @@ OPTION-READ.
 
     MOVE "R" TO WS-AC-OP-CODE
 
+    DISPLAY "DEBUG: chamando ACCOUNTS-IO (R)..."
     CALL "ACCOUNTS-IO" USING
          WS-AC-OP-CODE
          WS-AC-ACCOUNT-ID
@@ -156,6 +147,8 @@ OPTION-READ.
          WS-AC-OPENED-DATE
          WS-AC-STATUS
          WS-AC-RETURN-STATUS
+
+    DISPLAY "DEBUG: retorno ACCOUNTS-IO = " WS-AC-RETURN-STATUS
 
     IF WS-AC-RETURN-STATUS = "00"
        DISPLAY "Conta encontrada:"
@@ -189,6 +182,7 @@ OPTION-UPDATE.
     *> Primeiro le os dados atuais
     MOVE "R" TO WS-AC-OP-CODE
 
+    DISPLAY "DEBUG: chamando ACCOUNTS-IO (R p/ atualizar)..."
     CALL "ACCOUNTS-IO" USING
          WS-AC-OP-CODE
          WS-AC-ACCOUNT-ID
@@ -199,6 +193,8 @@ OPTION-UPDATE.
          WS-AC-OPENED-DATE
          WS-AC-STATUS
          WS-AC-RETURN-STATUS
+
+    DISPLAY "DEBUG: retorno ACCOUNTS-IO = " WS-AC-RETURN-STATUS
 
     IF WS-AC-RETURN-STATUS NOT = "00"
        DISPLAY "Conta nao encontrada. STATUS: " WS-AC-RETURN-STATUS
@@ -239,6 +235,7 @@ OPTION-UPDATE.
     MOVE "U" TO WS-AC-OP-CODE
     MOVE SPACE TO WS-AC-RETURN-STATUS
 
+    DISPLAY "DEBUG: chamando ACCOUNTS-IO (U)..."
     CALL "ACCOUNTS-IO" USING
          WS-AC-OP-CODE
          WS-AC-ACCOUNT-ID
@@ -250,6 +247,7 @@ OPTION-UPDATE.
          WS-AC-STATUS
          WS-AC-RETURN-STATUS
 
+    DISPLAY "DEBUG: retorno ACCOUNTS-IO = " WS-AC-RETURN-STATUS
     DISPLAY "Resultado atualizacao - STATUS: " WS-AC-RETURN-STATUS
     DISPLAY "Pressione ENTER para voltar ao menu."
     ACCEPT WS-PAUSE
@@ -265,6 +263,7 @@ OPTION-LIST.
     DISPLAY " "
     DISPLAY "=== Lista de contas (saida simples) ==="
 
+    DISPLAY "DEBUG: chamando ACCOUNTS-IO (L)..."
     CALL "ACCOUNTS-IO" USING
          WS-AC-OP-CODE
          WS-AC-ACCOUNT-ID
@@ -276,6 +275,7 @@ OPTION-LIST.
          WS-AC-STATUS
          WS-AC-RETURN-STATUS
 
+    DISPLAY "DEBUG: retorno ACCOUNTS-IO = " WS-AC-RETURN-STATUS
     DISPLAY "STATUS listagem: " WS-AC-RETURN-STATUS
     DISPLAY "Pressione ENTER para voltar ao menu."
     ACCEPT WS-PAUSE
