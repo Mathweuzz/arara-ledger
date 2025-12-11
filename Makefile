@@ -1,8 +1,10 @@
-# Makefile para AraraLedger - Passo 3
+# Makefile para AraraLedger - Passo 4
 # Compila:
 #   - src/util/hello-files.cob
 #   - src/storage/files-init.cob
-#   - src/storage/accounts-io.cob + src/tui/menu.cob (TUI)
+#   - src/storage/accounts-io.cob
+#   - src/storage/journal-io.cob
+#   - src/tui/menu.cob (TUI texto puro)
 
 COBC      = cobc
 COBCFLAGS = -free -Wall -I copy
@@ -25,12 +27,16 @@ $(BIN_DIR)/files-init: $(SRC_DIR)/storage/files-init.cob \
                        | $(BIN_DIR)
 	$(COBC) $(COBCFLAGS) -x $< -o $@
 
-$(BIN_DIR)/menu: $(SRC_DIR)/tui/menu.cob $(SRC_DIR)/storage/accounts-io.cob \
-                 copy/accounts.cpy copy/common.cpy \
+$(BIN_DIR)/menu: $(SRC_DIR)/tui/menu.cob \
+                 $(SRC_DIR)/storage/accounts-io.cob \
+                 $(SRC_DIR)/storage/journal-io.cob \
+                 copy/accounts.cpy copy/common.cpy copy/journal.cpy \
                  | $(BIN_DIR)
-	$(COBC) $(COBCFLAGS) -x $(SRC_DIR)/tui/menu.cob \
-                             $(SRC_DIR)/storage/accounts-io.cob \
-                             -o $@
+	$(COBC) $(COBCFLAGS) -x \
+            $(SRC_DIR)/tui/menu.cob \
+            $(SRC_DIR)/storage/accounts-io.cob \
+            $(SRC_DIR)/storage/journal-io.cob \
+            -o $@
 
 run-hello: $(BIN_DIR)/hello-files
 	./$(BIN_DIR)/hello-files
